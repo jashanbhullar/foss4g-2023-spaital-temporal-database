@@ -72,3 +72,39 @@ Check some SQL commands
 \dx
 
 ```
+
+Let's get the admin access
+
+```bash
+# Update the cluster before the following commands
+# Get the postgres uer password
+kubectl get secrets hippo-pguser-postgres -o go-template='{{.data.password | base64decode}}'
+
+# Connect using postgres user. Change the user and password
+psql 'postgresql://postgres:;>=*h7>Y)=iS]sI=dw+s1rVn@localhost:6432/hippo'
+```
+
+Let's add some data
+
+```SQL
+
+CREATE TABLE foss4g (
+    year INTEGER,
+    city TEXT
+);
+
+INSERT INTO foss4g (year, city) VALUES (2023, 'Prizren');
+INSERT INTO foss4g (year, city) VALUES (2022, 'Firenze');
+INSERT INTO foss4g (year, city) VALUES (2021, 'Buenos Aires');
+INSERT INTO foss4g (year, city) VALUES (2020, 'Canada');
+INSERT INTO foss4g (year, city) VALUES (2019, 'Bucharest');
+INSERT INTO foss4g (year, city) VALUES (2017, 'Boston');
+```
+
+Now let's delete the pod
+
+```bash
+kubectl delete pod hippo-instance[SOMETHING]
+```
+
+it'll automatically recover along with the data

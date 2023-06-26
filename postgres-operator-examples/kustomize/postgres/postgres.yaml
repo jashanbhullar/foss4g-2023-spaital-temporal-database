@@ -3,6 +3,8 @@ kind: PostgresCluster
 metadata:
   name: hippo
 spec:
+  users:
+   - name: postgres
   image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.3-0
   postgresVersion: 15
   instances:
