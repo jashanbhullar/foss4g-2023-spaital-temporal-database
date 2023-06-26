@@ -1,3 +1,5 @@
+## Step 0
+
 ### Setting up the cluster
 
 Install virtualbox (needed for minikube)
@@ -29,6 +31,9 @@ https://www.postgresql.org/download/
 ```bash
 psql --version
 ```
+
+Install QGIS
+https://www.qgis.org/en/site/forusers/download.html
 
 ### Setting up PGO
 
@@ -73,6 +78,8 @@ Check some SQL commands
 
 ```
 
+## Step 1
+
 Let's get the admin access
 
 ```bash
@@ -108,3 +115,50 @@ kubectl delete pod hippo-instance[SOMETHING]
 ```
 
 it'll automatically recover along with the data
+
+## Step 2
+
+Let's add some GIS data
+
+```SQL
+-- create the postgis extension before adding any geometry
+Create extension postgis;
+
+-- Check if it's added and the version
+\dx
+```
+
+Optional Step
+
+- Go to - https://raw-data-api0.hotosm.org/v1/docs#/default
+- GET /countries - Entry country name e.g. Kosovo. This'll give you the shapefile for the country
+- POST /snapshot - Use the shape geojson from above and bulid the request body with filename as .sql. Check the sample request body in data/kosovo-request.sh. This'll give you a task ID.
+  -GET /task/status/{task_id} - Check the status and when it's done, download the file and move onto the next steps
+
+```bash
+CONN_DB='postgresql://postgres:;>=*h7>Y)=iS]sI=dw+s1rVn@localhost:6432/hippo'
+cd ../data/
+psql $CONN_DB -f data/kosovo.sql
+psql $CONN_DB
+```
+
+```SQL
+-- check the schema for the table
+\d sql_statement;
+-- check the total rows
+Select count(*) from sql_statement;
+-- Convert the json columns to jsonb (for peformance)
+ALter table sql_statement ALTER column tags type jsonb using tags::jsonb;
+-- Filter on tags
+SELECT ogc_fid FROM sql_statement WHERE tags->>'internet_access' = 'yes';
+```
+
+Let's see this in QGIS
+
+- Open QGIS
+- Select postgres connection
+- Add port, user and password configuration. Make sure SSL is allowed
+- Test connection
+- Load the data on the map by clicking on the table
+- Optionally load OSM tiles as base layer
+- You can also see the attributes in the attributes table
