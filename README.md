@@ -84,6 +84,13 @@ Check some SQL commands
 ## Step 1
 
 Let's get the admin access
+Update the manifest
+
+```yaml
+spec:
+  users:
+    - name: postgres
+```
 
 ```bash
 # Update the cluster before the following commands
@@ -125,6 +132,13 @@ Let's add some GIS data
 Before that we add data, we to update the container image from here, select the gis containers:
 
 https://www.crunchydata.com/developers/download-postgres/containers
+
+Update the database manifest with:
+
+```yaml
+spec:
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-gis:ubi8-15.3-3.3-0
+```
 
 ```SQL
 -- create the postgis extension before adding any geometry
