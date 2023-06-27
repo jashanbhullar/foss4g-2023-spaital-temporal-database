@@ -35,6 +35,9 @@ psql --version
 Install QGIS
 https://www.qgis.org/en/site/forusers/download.html
 
+Install pgAdmin
+https://www.pgadmin.org/download/
+
 ### Setting up PGO
 
 PGO Quick Start
@@ -119,6 +122,9 @@ it'll automatically recover along with the data
 ## Step 2
 
 Let's add some GIS data
+Before that we add data, we to update the container image from here, select the gis containers:
+
+https://www.crunchydata.com/developers/download-postgres/containers
 
 ```SQL
 -- create the postgis extension before adding any geometry
@@ -139,6 +145,7 @@ Optional Step
 CONN_DB='postgresql://postgres:;>=*h7>Y)=iS]sI=dw+s1rVn@localhost:6432/hippo'
 cd ../data/
 psql $CONN_DB -f data/kosovo.sql
+psql $CONN_DB -f data/albania.sql
 psql $CONN_DB
 ```
 
@@ -162,3 +169,5 @@ Let's see this in QGIS
 - Load the data on the map by clicking on the table
 - Optionally load OSM tiles as base layer
 - You can also see the attributes in the attributes table
+
+Similarly you can connect pgAdmin4 or any client with the database. Later on we'll see better ways to connect to the database using pgBouncer.
