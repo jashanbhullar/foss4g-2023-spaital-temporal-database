@@ -185,3 +185,127 @@ Let's see this in QGIS
 - You can also see the attributes in the attributes table
 
 Similarly you can connect pgAdmin4 or any client with the database. Later on we'll see better ways to connect to the database using pgBouncer.
+
+## Step 3
+
+Let's extend the capabilities of our database.
+
+- timescaleDB for the temporal component
+- uber h3 index for h3 grids in the database, used for faster spatial queries
+
+Let's update the manifest
+
+```yaml
+spec:
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          shared_preload_libraries: timescaledb
+```
+
+Let's create the extension
+
+```SQL
+-- create the extension
+create extension timescaleDB;
+-- verify the extension
+\dx
+```
+
+Not let's add some data
+
+```SQL
+CREATE TABLE countries (
+    name VARCHAR(255),
+    geom GEOMETRY
+);
+```
+
+```bash
+psql $CONN_DB -f data/countries.sql
+```
+
+Let's create some spatial-temporal data
+
+```SQL
+-- let's create sample weather data
+CREATE TABLE weather_data (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP,
+    temperature FLOAT,
+    humidity FLOAT,
+    precipitation FLOAT,
+	location GEOMETRY(Point, 4326)
+);
+
+-- Optional: These will take some time to complete, use the .sql file below. it has relatively smaller set of data
+INSERT INTO weather_data (timestamp,
+ temperature, humidity, precipitation, location)
+SELECT
+    timestamp,
+    random() * 50, -- generate random temperature between 0 and 50
+    random() * 100, -- generate random humidity between 0 and 100
+    random() * 10, -- generate random precipitation between 0 and 10
+	(ST_DumpPoints(ST_GeneratePoints((Select geom from countries where name = 'Kosovo'), 1))).geom
+FROM generate_series(
+    '2021-01-01'::timestamp, -- start date
+    '2023-01-01'::timestamp, -- end date
+    '30 sec' -- interval of 1 minute
+) AS timestamp;
+
+INSERT INTO weather_data (timestamp,
+ temperature, humidity, precipitation, location)
+SELECT
+    timestamp,
+    random() * 50, -- generate random temperature between 0 and 50
+    random() * 100, -- generate random humidity between 0 and 100
+    random() * 10, -- generate random precipitation between 0 and 10
+	(ST_DumpPoints(ST_GeneratePoints((Select geom from countries where name = 'Albania'), 1))).geom
+FROM generate_series(
+    '2021-01-01'::timestamp, -- start date
+    '2023-01-01'::timestamp, -- end date
+    '30 sec' -- interval of 1 minute
+) AS timestamp;
+
+-- this will take some time
+psql $CONN_DB -f data/weather-data.sql
+```
+
+Let's do some temporal stuff
+
+```SQL
+-- let's find avg temperature for Kosovo and Albania (Obviously not correct)
+SELECT AVG(temperature) AS avg_temperature
+FROM weather_data
+where ST_Within(location, (Select geom from countries where name ='Albania'));
+
+SELECT AVG(temperature) AS avg_temperature
+FROM weather_data
+where ST_Within(location, (Select geom from countries where name ='Kosovo'));
+
+-- let's create a hypetable
+create table weather_data_hypertable as select * from weather_data;
+
+SELECT create_hypertable('weather_data_hypertable','timestamp', chunk_time_interval => INTERVAL '1 day', migrate_data => true);
+
+\d+ weather_data_hypertable;
+
+-- avg temperature by day
+SELECT date_trunc('day', timestamp) AS day,
+       AVG(temperature) AS average_temperature
+FROM weather_data
+GROUP BY day
+ORDER BY day;
+
+-- avg temperature by day in hypertable
+SELECT time_bucket(INTERVAL '1 day', timestamp::TIMESTAMP)
+  AS day, avg(temperature)
+FROM weather_data_hypertable
+GROUP BY day
+ORDER BY day;
+
+-- https://docs.timescale.com/api/latest/hyperfunctions/gapfilling/time_bucket_gapfill/
+-- gapfill can fill values where the data is missing
+
+```

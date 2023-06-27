@@ -27,3 +27,9 @@ spec:
             resources:
               requests:
                 storage: 1Gi
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          shared_preload_libraries: timescaledb
+
