@@ -9,6 +9,7 @@ spec:
   postgresVersion: 15
   instances:
     - name: instance1
+      replicas: 2
       dataVolumeClaimSpec:
         accessModes:
         - "ReadWriteOnce"
@@ -32,4 +33,8 @@ spec:
       postgresql:
         parameters:
           shared_preload_libraries: timescaledb
+  proxy:
+    pgBouncer:
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbouncer:ubi8-1.19-0
+
 

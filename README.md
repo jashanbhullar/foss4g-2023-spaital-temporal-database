@@ -309,3 +309,35 @@ ORDER BY day;
 -- gapfill can fill values where the data is missing
 
 ```
+
+## Step 4
+
+Let's back to the Infrastructure part
+
+Let's add another postgres instance
+
+```yaml
+spec:
+  instances:
+    replicas: 2
+```
+
+Adds another postgres instance
+
+Now let's add connection pooler
+
+```yaml
+proxy:
+  pgBouncer:
+    image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbouncer:ubi8-1.19-0
+```
+
+## Finally
+
+Let's clean up
+
+```bash
+kubectl delete -k kustomize/postgres
+```
+
+and that's it folks
